@@ -2,6 +2,13 @@ import practiceServer
 import unittest
 import json
 from pymongo import MongoClient
+import base64
+
+
+def auth_header(username, password):
+    credentials = '{0}:{1}'.format(username, password).encode('utf-8')
+    encode_login = base64.b64encode(credentials).decode()
+    return dict(Authorization="Basic " + encode_login)
 
 
 class FlaskrTestCase(unittest.TestCase):
@@ -26,7 +33,7 @@ class FlaskrTestCase(unittest.TestCase):
         response = self.app.post(
             '/user/',
             data=json.dumps(dict(
-                name="doge",
+                username="doge",
                 password="1234"
             )),
             content_type='application/json')
@@ -35,29 +42,26 @@ class FlaskrTestCase(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         assert 'application/json' in response.content_type
-        assert 'doge' in responseJSON["name"]
+        assert 'doge' in responseJSON["username"]
 
-    def test_getting_non_existent_user(self):
-        response = self.app.get('/user/55f0cbb4236f44b7f0e3cb23')
-        self.assertEqual(response.status_code, 404)
+    # def test_getting_non_existent_user(self):
+    #     response = self.app.get('/user/55f0cbb4236f44b7f0e3cb23')
+    #     self.assertEqual(response.status_code, 404)
 
     def test_getting_user(self):
         response = self.app.post(
             '/user/',
             data=json.dumps(dict(
-                name="dogey",
-                password="1234"
+                username='dogey',
+                password='1234'
             )),
-            content_type='application/json')
+            content_type='application/json', headers=auth_header('dogey', '1234'))
 
-        postResponseJSON = json.loads(response.data.decode())
-        postedObjectID = postResponseJSON["_id"]
-
-        response = self.app.get('/user/' + postedObjectID)
+        response = self.app.get('/user/', headers=auth_header('dogey', '1234'))
         responseJSON = json.loads(response.data.decode())
 
         self.assertEqual(response.status_code, 200)
-        assert 'dogey' in responseJSON["name"]
+        assert 'dogey' in responseJSON["username"]
 
 
 if __name__ == '__main__':

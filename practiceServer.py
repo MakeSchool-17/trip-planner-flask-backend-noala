@@ -28,14 +28,20 @@ def hash_pw(password, salt=None):
 # User Auth code
 def check_auth(username, password):
     user_collection = app.db.user
-    user = user_collection.find_one({'name': username})
+    user = user_collection.find_one({'username': username})
+    user_password = user['password']
     try:
-        user_password = user['password']
-        hashed_pass = hash_pw(password, user_password)
-
-        return hashed_pass == user_password
+        return hash_pw(password, user_password)
     except KeyError:
         return False
+
+# def check_auth(username, password):
+#     user_db = app.db.users
+#     find_username = user_db.find_one({'username': username})
+#     if find_username:
+#         db_password = find_username['password']
+#         encode_pass = password.encode('utf-8')
+#         return bcrypt.hashpw(encode_pass, db_password) == db_password
 
 
 def requires_auth(f):
@@ -61,6 +67,7 @@ class Trip(Resource):
             {'_id': ObjectId(result.inserted_id)})
         return post_info
 
+    @requires_auth
     def get(self, trip_id=None):
         trip_collection = app.db.Trip
         get_info = trip_collection.find_one(
@@ -114,36 +121,42 @@ class User(Resource):
         post_info['password'] = post_info['password'].decode('utf-8')
         return post_info
 
-    def get(self, user_id=None):
+    @requires_auth
+    def get(self):
+        username = request.authorization.username
         user_collection = app.db.user
-        retrieve_user = user_collection.find_one({'_id': ObjectId(user_id)})
+        retrieve_user = user_collection.find_one({'username': username})
         if not retrieve_user:
             # return error response
             response = jsonify(data=[])
             response.status_code = 404
             return response
-        # decode byte to str
-        retrieve_user['password'] = retrieve_user['password'].decode('utf-8')
-        return retrieve_user
+        return {
+            'username': retrieve_user['username']
+        }
 
-    def put(self, user_id=None):
+    @requires_auth
+    def put(self):
+        username = request.authorization.username
         user_info = request.json
         user_collection = app.db.user
         update_user = user_collection.update_one(
-            {'_id': ObjectId(user_id)}, {'$set': user_info})
+            {'username': username}, {'$set': user_info})
         return update_user
 
-    def delete(self, user_id=None):
+    @requires_auth
+    def delete(self):
+        username = request.authorization.username
         user_collection = app.db.user
         retrieve_user = user_collection.find_one(
-            {'__id': ObjectId(user_id)})
+            {'username': username})
         user_collection.delete_one(retrieve_user)
         return retrieve_user
 
 
 # Add REST resource to API
 api.add_resource(Trip, '/trip/', '/trip/<string:trip_id>', endpoint='trip')
-api.add_resource(User, '/user/', '/user/<string:user_id>', endpoint='user')
+api.add_resource(User, '/user/', endpoint='user')
 
 
 # provide a custom JSON serializer for flaks_restful
