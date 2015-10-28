@@ -29,19 +29,26 @@ def hash_pw(password, salt=None):
 def check_auth(username, password):
     user_collection = app.db.user
     user = user_collection.find_one({'username': username})
-    user_password = user['password']
+    if user is None:
+        return False
     try:
-        return hash_pw(password, user_password)
+        hash_pw(password, user['password']) == user['password']
+        return True
     except KeyError:
         return False
 
+
+# # User Auth code
 # def check_auth(username, password):
-#     user_db = app.db.users
-#     find_username = user_db.find_one({'username': username})
-#     if find_username:
-#         db_password = find_username['password']
-#         encode_pass = password.encode('utf-8')
-#         return bcrypt.hashpw(encode_pass, db_password) == db_password
+#     user_collection = app.db.user
+#     user = user_collection.find_one({'username': username})
+#     if user is None:
+#         return False
+#     else:
+#         if hash_pw(password, user['password']):
+#             return True
+#         else:
+#             return False
 
 
 def requires_auth(f):
