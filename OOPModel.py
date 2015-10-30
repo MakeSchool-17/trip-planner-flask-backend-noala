@@ -73,6 +73,11 @@ class DBModel(object):
         collection.insert_one(self.data)
         self.is_saved = True
 
+    def remove(self):
+        collection = self._collection()
+        collection.delete_one(self.data)
+        self.is_saved = False
+
     def set(self, key, value):
 
         self.data[key] = value
@@ -121,3 +126,7 @@ class User(DBModel):
             if len(query) > 0:
                 return False
         return super(User, self).save()
+
+
+class Trip(DBModel):
+    pass

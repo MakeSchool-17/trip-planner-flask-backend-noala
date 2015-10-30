@@ -66,8 +66,10 @@ def requires_auth(f):
 
 
 class Trip(Resource):
+    @requires_auth
     def post(self):
         trip_info = request.json
+        trip_info["username"] = request.authorization.username
         trip_collection = app.db.trip
         result = trip_collection.insert_one(trip_info)
         post_info = trip_collection.find_one(

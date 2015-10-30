@@ -72,6 +72,41 @@ class Users(Resource):
         return {}
 
 
+class Trips(Resource):
+
+    @require_auth
+    def post(self):
+        username = request.authorization.username
+        trip_info = request.json
+        trip = Trip(rawdata=trip_info)
+        # add waypoints
+        trip.set('username', username)
+        trip.save()
+
+    @require_auth
+    def get(self, trip_id=None):
+        username = request.authorization.username
+        trips = Trip.fetch({'username': username})
+        get_trip = trips.get(trip_id)
+        # get trips
+        return get_trip
+
+    @require_auth
+    def put(self, trip_id=None):
+        username = request.authorization.username
+        trips = Trip.fetch({'username': username})
+        get_trip = trips.get(trip_id)
+        trip_info = request.json
+        get_trip.save(trip_info)
+
+    @require_auth
+    def delete(self):
+        username = request.authorization.username
+        trips = Trip.fetch({'username': username})
+        get_trip = trips.get(trip_id)
+        Trip.remove(get_trip)
+
+
 """ ADD REST RESOURCE TO API """
 api.add_resource(Users, '/users/')
 
